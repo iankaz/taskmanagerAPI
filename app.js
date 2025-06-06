@@ -42,8 +42,10 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Development server'
+        url: process.env.NODE_ENV === 'production' 
+          ? 'https://cse341-rlcp.onrender.com'
+          : 'http://localhost:3000',
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server'
       }
     ],
     components: {

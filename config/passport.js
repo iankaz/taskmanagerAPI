@@ -7,13 +7,17 @@ const User = require('../models/User');
 console.log('GitHub Config:', {
   clientID: process.env.GITHUB_CLIENT_ID,
   clientSecret: process.env.GITHUB_CLIENT_SECRET ? '***' : undefined,
-  callbackURL: 'http://localhost:3000/api/auth/github/callback'
+  callbackURL: process.env.NODE_ENV === 'production' 
+    ? 'https://cse341-rlcp.onrender.com/api/auth/github/callback'
+    : 'http://localhost:3000/api/auth/github/callback'
 });
 
 passport.use(new GitHubStrategy({
     clientID: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: 'http://localhost:3000/api/auth/github/callback'
+    callbackURL: process.env.NODE_ENV === 'production' 
+      ? 'https://cse341-rlcp.onrender.com/api/auth/github/callback'
+      : 'http://localhost:3000/api/auth/github/callback'
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
