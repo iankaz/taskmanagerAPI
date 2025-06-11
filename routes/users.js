@@ -80,14 +80,10 @@ router.post('/signup', [
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new user
+    // Create new user (password will be hashed by pre-save middleware)
     const user = new User({
       email,
-      password: hashedPassword,
+      password,
       name
     });
 
