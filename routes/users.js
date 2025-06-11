@@ -62,7 +62,10 @@ router.post('/signup', [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ 
+      error: 'Validation Error',
+      details: errors.array() 
+    });
   }
 
   try {
@@ -71,7 +74,10 @@ router.post('/signup', [
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ 
+        error: 'User already exists',
+        details: 'An account with this email address already exists'
+      });
     }
 
     // Hash password
@@ -100,7 +106,11 @@ router.post('/signup', [
       }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('User Creation Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to create user',
+      details: error.message 
+    });
   }
 });
 
@@ -155,7 +165,10 @@ router.post('/login', [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ 
+      error: 'Validation Error',
+      details: errors.array() 
+    });
   }
 
   try {
@@ -163,7 +176,10 @@ router.post('/login', [
     const user = await User.findOne({ email });
 
     if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ 
+        error: 'Invalid credentials',
+        details: 'The email or password you entered is incorrect'
+      });
     }
 
     // Generate JWT token
@@ -179,7 +195,11 @@ router.post('/login', [
       }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Login Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to login',
+      details: error.message 
+    });
   }
 });
 
@@ -219,7 +239,11 @@ router.get('/profile', auth, async (req, res) => {
       githubId: req.user.githubId
     });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Profile Fetch Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch profile',
+      details: error.message 
+    });
   }
 });
 

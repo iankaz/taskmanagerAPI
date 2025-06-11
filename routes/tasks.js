@@ -45,7 +45,10 @@ router.post('/', auth, [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ 
+      error: 'Validation Error',
+      details: errors.array() 
+    });
   }
 
   try {
@@ -57,7 +60,11 @@ router.post('/', auth, [
     await task.save();
     res.status(201).json(task);
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Task Creation Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to create task',
+      details: error.message 
+    });
   }
 });
 
@@ -114,7 +121,11 @@ router.get('/', auth, async (req, res) => {
 
     res.json(tasks);
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Task Fetch Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch tasks',
+      details: error.message 
+    });
   }
 });
 
@@ -204,13 +215,19 @@ router.put('/:id', [
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ 
+      error: 'Validation Error',
+      details: errors.array() 
+    });
   }
 
   try {
     const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
     if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
+      return res.status(404).json({ 
+        error: 'Task not found',
+        details: 'The requested task does not exist or you do not have permission to access it'
+      });
     }
 
     Object.keys(req.body).forEach(key => {
@@ -220,7 +237,11 @@ router.put('/:id', [
     await task.save();
     res.json(task);
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Task Update Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to update task',
+      details: error.message 
+    });
   }
 });
 
