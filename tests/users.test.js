@@ -36,7 +36,36 @@ describe('User Endpoints', () => {
         });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body).toHaveProperty('message', 'User already exists');
+      expect(res.body).toHaveProperty('error', 'User already exists');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not create user with invalid email', async () => {
+      const res = await request(app)
+        .post('/api/users/signup')
+        .send({
+          email: 'invalid-email',
+          password: 'password123',
+          name: 'Test User'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not create user with short password', async () => {
+      const res = await request(app)
+        .post('/api/users/signup')
+        .send({
+          email: 'test@example.com',
+          password: '123',
+          name: 'Test User'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('details');
     });
   });
 
@@ -71,7 +100,21 @@ describe('User Endpoints', () => {
         });
 
       expect(res.statusCode).toBe(401);
-      expect(res.body).toHaveProperty('message', 'Invalid credentials');
+      expect(res.body).toHaveProperty('error', 'Invalid credentials');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not login with non-existent email', async () => {
+      const res = await request(app)
+        .post('/api/users/login')
+        .send({
+          email: 'nonexistent@example.com',
+          password: 'password123'
+        });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toHaveProperty('error', 'Invalid credentials');
+      expect(res.body).toHaveProperty('details');
     });
   });
 
@@ -110,6 +153,18 @@ describe('User Endpoints', () => {
         .get('/api/users/profile');
 
       expect(res.statusCode).toBe(401);
+      expect(res.body).toHaveProperty('error', 'Authentication required');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not get profile with invalid token', async () => {
+      const res = await request(app)
+        .get('/api/users/profile')
+        .set('Authorization', 'Bearer invalid-token');
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('details');
     });
   });
 }); 

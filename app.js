@@ -10,6 +10,8 @@ const swaggerUi = require('swagger-ui-express');
 const taskRoutes = require('./routes/tasks');
 const userRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
+const categoryRoutes = require('./routes/categories');
+const commentRoutes = require('./routes/comments');
 
 const app = express();
 
@@ -26,7 +28,9 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
-      tasks: '/api/tasks'
+      tasks: '/api/tasks',
+      categories: '/api/categories',
+      comments: '/api/comments'
     }
   });
 });
@@ -71,6 +75,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -81,18 +87,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    // Start server
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+// Only start the server if this file is run directly
+if (require.main === module) {
+  // Connect to MongoDB
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log('Connected to MongoDB');
+      // Start server
+      const PORT = process.env.PORT || 3000;
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+      });
+    })
+    .catch((error) => {
+      console.error('MongoDB connection error:', error);
     });
-  })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error);
-  });
+}
 
 module.exports = app; 

@@ -7,17 +7,31 @@ const auth = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      throw new Error();
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        details: 'No token provided'
+      });
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({ 
+        error: 'Invalid token',
+        details: 'Token is invalid or expired'
+      });
+    }
     
     // Find user by id
     const user = await User.findOne({ _id: decoded.userId });
     
     if (!user) {
-      throw new Error();
+      return res.status(401).json({ 
+        error: 'User not found',
+        details: 'The user associated with this token no longer exists'
+      });
     }
 
     // Add user to request object
@@ -27,7 +41,10 @@ const auth = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Auth Middleware Error:', error);
-    res.status(401).json({ error: 'Please authenticate.' });
+    res.status(500).json({ 
+      error: 'Authentication error',
+      details: 'An unexpected error occurred during authentication'
+    });
   }
 };
 

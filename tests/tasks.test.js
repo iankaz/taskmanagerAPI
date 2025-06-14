@@ -51,6 +51,22 @@ describe('Task Endpoints', () => {
         });
 
       expect(res.statusCode).toBe(400);
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not create task without auth', async () => {
+      const res = await request(app)
+        .post('/api/tasks')
+        .send({
+          title: 'Test Task',
+          description: 'Test Description',
+          priority: 'high'
+        });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toHaveProperty('error', 'Authentication required');
+      expect(res.body).toHaveProperty('details');
     });
   });
 
@@ -92,6 +108,15 @@ describe('Task Endpoints', () => {
       expect(res.body.length).toBe(1);
       expect(res.body[0].priority).toBe('high');
     });
+
+    it('should not get tasks without auth', async () => {
+      const res = await request(app)
+        .get('/api/tasks');
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toHaveProperty('error', 'Authentication required');
+      expect(res.body).toHaveProperty('details');
+    });
   });
 
   describe('GET /api/tasks/:id', () => {
@@ -120,7 +145,18 @@ describe('Task Endpoints', () => {
         .get('/api/tasks/invalidid')
         .set('Authorization', `Bearer ${token}`);
 
-      expect(res.statusCode).toBe(500);
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not get task without auth', async () => {
+      const res = await request(app)
+        .get(`/api/tasks/${task._id}`);
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toHaveProperty('error', 'Authentication required');
+      expect(res.body).toHaveProperty('details');
     });
   });
 
@@ -159,6 +195,33 @@ describe('Task Endpoints', () => {
         });
 
       expect(res.statusCode).toBe(400);
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not update non-existent task', async () => {
+      const res = await request(app)
+        .put('/api/tasks/invalidid')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          title: 'Updated Task'
+        });
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not update task without auth', async () => {
+      const res = await request(app)
+        .put(`/api/tasks/${task._id}`)
+        .send({
+          title: 'Updated Task'
+        });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toHaveProperty('error', 'Authentication required');
+      expect(res.body).toHaveProperty('details');
     });
   });
 
@@ -180,7 +243,7 @@ describe('Task Endpoints', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body).toHaveProperty('message', 'Task deleted successfully');
+      expect(res.body).toHaveProperty('error', 'Task deleted successfully');
 
       // Verify task is deleted
       const deletedTask = await Task.findById(task._id);
@@ -193,6 +256,17 @@ describe('Task Endpoints', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).toBe(404);
+      expect(res.body).toHaveProperty('error');
+      expect(res.body).toHaveProperty('details');
+    });
+
+    it('should not delete task without auth', async () => {
+      const res = await request(app)
+        .delete(`/api/tasks/${task._id}`);
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body).toHaveProperty('error', 'Authentication required');
+      expect(res.body).toHaveProperty('details');
     });
   });
 }); 

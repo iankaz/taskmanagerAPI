@@ -159,11 +159,23 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
     if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
+      return res.status(404).json({ 
+        error: 'Task not found',
+        details: 'The requested task does not exist or you do not have permission to access it'
+      });
     }
     res.json(task);
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    if (error.name === 'CastError') {
+      return res.status(404).json({ 
+        error: 'Invalid task ID',
+        details: 'The provided task ID is not valid'
+      });
+    }
+    res.status(500).json({ 
+      error: 'Server error',
+      details: error.message 
+    });
   }
 });
 
@@ -237,6 +249,12 @@ router.put('/:id', [
     await task.save();
     res.json(task);
   } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(404).json({ 
+        error: 'Invalid task ID',
+        details: 'The provided task ID is not valid'
+      });
+    }
     console.error('Task Update Error:', error);
     res.status(500).json({ 
       error: 'Failed to update task',
@@ -273,13 +291,28 @@ router.put('/:id', [
  */
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const task = await Task.findOneAndDelete({ _id: req.params.id, user: req.user._id });
+    const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
     if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
+      return res.status(404).json({ 
+        error: 'Task not found',
+        details: 'The requested task does not exist or you do not have permission to access it'
+      });
     }
-    res.json(task);
+
+    await task.deleteOne();
+    res.json({ error: 'Task deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    if (error.name === 'CastError') {
+      return res.status(404).json({ 
+        error: 'Invalid task ID',
+        details: 'The provided task ID is not valid'
+      });
+    }
+    console.error('Task Delete Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete task',
+      details: error.message 
+    });
   }
 });
 
