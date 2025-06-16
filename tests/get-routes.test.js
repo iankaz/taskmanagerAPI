@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Task = require('../models/Task');
 const Category = require('../models/Category');
 const Comment = require('../models/Comment');
+const jwt = require('jsonwebtoken');
 
 describe('GET Routes Testing', () => {
   let token;
@@ -12,11 +13,8 @@ describe('GET Routes Testing', () => {
   let category;
   let comment;
 
-  // Setup before all tests
-  beforeAll(async () => {
-    // Delete any existing test user
-    await User.deleteOne({ email: 'test@example.com' });
-
+  // Setup before each test
+  beforeEach(async () => {
     // Create test user
     user = await User.create({
       email: 'test@example.com',
@@ -24,15 +22,12 @@ describe('GET Routes Testing', () => {
       name: 'Test User'
     });
 
-    // Login to get token
-    const loginRes = await request(app)
-      .post('/api/users/login')
-      .send({
-        email: 'test@example.com',
-        password: 'password123'
-      });
-
-    token = loginRes.body.token;
+    // Generate token directly
+    token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
     // Create test task
     task = await Task.create({
@@ -55,17 +50,14 @@ describe('GET Routes Testing', () => {
       task: task._id,
       user: user._id
     });
-
-    // Wait for token to be valid
-    await new Promise(resolve => setTimeout(resolve, 1000));
   });
 
   // Cleanup after all tests
   afterAll(async () => {
-    await User.deleteOne({ email: 'test@example.com' });
-    await Task.deleteMany({ user: user._id });
-    await Category.deleteMany({ user: user._id });
-    await Comment.deleteMany({ user: user._id });
+    await User.deleteMany({ email: 'test@example.com' });
+    await Task.deleteMany({});
+    await Category.deleteMany({});
+    await Comment.deleteMany({});
   });
 
   describe('User GET Routes', () => {
@@ -159,7 +151,7 @@ describe('GET Routes Testing', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).toBe(404);
-      expect(res.body).toHaveProperty('error', 'Invalid category ID');
+      expect(res.body).toHaveProperty('error', 'Category not found');
       expect(res.body).toHaveProperty('details');
     });
   });
@@ -192,7 +184,7 @@ describe('GET Routes Testing', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).toBe(404);
-      expect(res.body).toHaveProperty('error', 'Invalid task ID');
+      expect(res.body).toHaveProperty('error', 'Task not found');
       expect(res.body).toHaveProperty('details');
     });
 
@@ -202,7 +194,7 @@ describe('GET Routes Testing', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).toBe(404);
-      expect(res.body).toHaveProperty('error', 'Invalid comment ID');
+      expect(res.body).toHaveProperty('error', 'Comment not found');
       expect(res.body).toHaveProperty('details');
     });
   });

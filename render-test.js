@@ -2,6 +2,12 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+const request = require('supertest');
+const app = require('./app');
+const User = require('./models/User');
+const Task = require('./models/Task');
+const Category = require('./models/Category');
+const Comment = require('./models/Comment');
 
 // Set test environment variables
 process.env.PORT = 3001;
@@ -43,29 +49,93 @@ console.log('MONGODB_URI:', process.env.MONGODB_URI);
 console.log('PORT:', process.env.PORT);
 console.log('HOST:', process.env.HOST);
 
-try {
-  // Run the tests with the test environment
-  console.log('\nRunning tests...');
-  
-  // Set environment variables for the child process
-  const testEnv = {
-    ...process.env,
-    NODE_ENV: 'test',
-    PORT: '3001'
-  };
+async function runTests() {
+  console.log('Starting GET Routes Tests...\n');
 
-  // Use platform-specific command
-  const command = process.platform === 'win32' 
-    ? 'set NODE_ENV=test&& set PORT=3001&& npm test -- --detectOpenHandles'
-    : 'NODE_ENV=test PORT=3001 npm test -- --detectOpenHandles';
-
-  execSync(command, { 
-    stdio: 'inherit',
-    env: testEnv
+  // Create test user
+  const user = await User.create({
+    email: 'test@example.com',
+    password: 'password123',
+    name: 'Test User'
   });
-  
-  console.log('\nTests completed successfully!');
-} catch (error) {
-  console.error('\nTests failed:', error.message);
-  process.exit(1);
-} 
+
+  // Login to get token
+  const loginRes = await request(app)
+    .post('/api/users/login')
+    .send({
+      email: 'test@example.com',
+      password: 'password123'
+    });
+
+  const token = loginRes.body.token;
+
+  // Create test data
+  const task = await Task.create({
+    title: 'Test Task',
+    description: 'Test Description',
+    priority: 'high',
+    user: user._id
+  });
+
+  const category = await Category.create({
+    name: 'Test Category',
+    description: 'Test Description',
+    user: user._id
+  });
+
+  const comment = await Comment.create({
+    content: 'Test Comment',
+    task: task._id,
+    user: user._id
+  });
+
+  // Test GET routes
+  console.log('Testing User GET Routes...');
+  const userProfileRes = await request(app)
+    .get('/api/users/profile')
+    .set('Authorization', `Bearer ${token}`);
+  console.log('User Profile GET:', userProfileRes.statusCode === 200 ? 'PASS' : 'FAIL');
+
+  console.log('\nTesting Task GET Routes...');
+  const tasksRes = await request(app)
+    .get('/api/tasks')
+    .set('Authorization', `Bearer ${token}`);
+  console.log('Get All Tasks:', tasksRes.statusCode === 200 ? 'PASS' : 'FAIL');
+
+  const taskByIdRes = await request(app)
+    .get(`/api/tasks/${task._id}`)
+    .set('Authorization', `Bearer ${token}`);
+  console.log('Get Task by ID:', taskByIdRes.statusCode === 200 ? 'PASS' : 'FAIL');
+
+  console.log('\nTesting Category GET Routes...');
+  const categoriesRes = await request(app)
+    .get('/api/categories')
+    .set('Authorization', `Bearer ${token}`);
+  console.log('Get All Categories:', categoriesRes.statusCode === 200 ? 'PASS' : 'FAIL');
+
+  const categoryByIdRes = await request(app)
+    .get(`/api/categories/${category._id}`)
+    .set('Authorization', `Bearer ${token}`);
+  console.log('Get Category by ID:', categoryByIdRes.statusCode === 200 ? 'PASS' : 'FAIL');
+
+  console.log('\nTesting Comment GET Routes...');
+  const commentsRes = await request(app)
+    .get(`/api/comments/task/${task._id}`)
+    .set('Authorization', `Bearer ${token}`);
+  console.log('Get Comments for Task:', commentsRes.statusCode === 200 ? 'PASS' : 'FAIL');
+
+  const commentByIdRes = await request(app)
+    .get(`/api/comments/${comment._id}`)
+    .set('Authorization', `Bearer ${token}`);
+  console.log('Get Comment by ID:', commentByIdRes.statusCode === 200 ? 'PASS' : 'FAIL');
+
+  // Cleanup
+  await User.deleteOne({ email: 'test@example.com' });
+  await Task.deleteMany({ user: user._id });
+  await Category.deleteMany({ user: user._id });
+  await Comment.deleteMany({ user: user._id });
+
+  console.log('\nAll GET route tests completed!');
+}
+
+runTests().catch(console.error); 

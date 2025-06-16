@@ -9,7 +9,7 @@ process.env.NODE_ENV = 'test';
 process.env.HOST = 'localhost';
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.CLIENT_URL = 'http://localhost:3000';
-process.env.JWT_SECRET = 'test-secret-key';
+process.env.JWT_SECRET = 'test-secret-key-123456789';
 
 // Connect to test database before running tests
 beforeAll(async () => {

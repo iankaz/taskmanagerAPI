@@ -13,11 +13,16 @@ const auth = async (req, res, next) => {
       });
     }
 
+    console.log('JWT Secret:', process.env.JWT_SECRET);
+    console.log('Token:', token);
+
     // Verify token
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Decoded token:', decoded);
     } catch (error) {
+      console.error('Token verification error:', error);
       return res.status(401).json({ 
         error: 'Invalid token',
         details: 'Token is invalid or expired'
@@ -26,6 +31,7 @@ const auth = async (req, res, next) => {
     
     // Find user by id
     const user = await User.findOne({ _id: decoded.userId });
+    console.log('Found user:', user ? 'yes' : 'no');
     
     if (!user) {
       return res.status(401).json({ 
